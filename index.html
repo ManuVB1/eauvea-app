@@ -970,6 +970,8 @@ setStep(0);
 $$('#iType .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
 let profil='Propriétaire'; bindSeg($('#iProfil'),v=>profil=v);
 let via='mail';
+/* Certaines messageries (Yahoo Mail…) décodent mal les accents d'un lien mailto : on envoie un texte sans accents */
+const ascii=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\u2013\u2014]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u00ab\u00bb\u201c\u201d]/g,'"').replace(/\u0153/g,'oe').replace(/\u00e6/g,'ae').replace(/[^\x00-\x7F]/g,'');
 $$('#iForm [data-via]').forEach(b=>b.addEventListener('click',()=>via=b.dataset.via));
 $('#iForm').onsubmit=e=>{
   e.preventDefault();
@@ -992,7 +994,7 @@ Je suis : ${profil.toLowerCase()}
   const subject='Demande d\'intervention – '+(types[0]||'Eauvéa')+(o.commune?' – '+o.commune:'');
   const url = via==='wa'
     ? 'https://wa.me/33615366868?text='+encodeURIComponent(body)
-    : 'mailto:accueil@eauvea.fr?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    : 'mailto:accueil@eauvea.fr?subject='+encodeURIComponent(ascii(subject))+'&body='+encodeURIComponent(ascii(body));
   try{ window.location.href=url; }catch(err){}
   $('#iHint').textContent='Rien ne s\'ouvre ? Appelez le 06 15 36 68 68 ou écrivez à accueil@eauvea.fr.';
 };
