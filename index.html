@@ -750,9 +750,7 @@ details.acc .body p+p{margin-top:8px}
     </div>
     <label class="f">En quelques mots</label>
     <textarea class="in" id="iDesc" placeholder="Depuis quand, où, ce que vous avez remarqué…"></textarea>
-    <label class="f">Photos</label>
-    <label class="drop"><input type="file" id="iPhotos" accept="image/*" multiple><div class="ic"><svg><use href="#i-camera"/></svg></div><div><b style="font-size:15px">Ajouter des photos</b><div class="small muted">Tache, compteur, plafond…</div></div></label>
-    <div class="thumbs" id="iThumbs"></div>
+    <div class="note" style="margin-top:14px"><svg><use href="#i-camera"/></svg><div>Des photos nous aident beaucoup (tache, plafond, compteur). Vous pourrez les ajouter juste après, dans le mail ou la conversation WhatsApp.</div></div>
     <label class="f">Nom</label><input class="in" data-k="nom" data-l="i" autocomplete="name">
     <div class="grid2">
       <div><label class="f">Téléphone</label><input class="in" data-k="tel" data-l="i" type="tel" autocomplete="tel"></div>
@@ -760,8 +758,11 @@ details.acc .body p+p{margin-top:8px}
     </div>
     <label class="f">Vous êtes</label>
     <div class="seg" id="iProfil"><button type="button" data-v="Propriétaire" class="on">Propriétaire</button><button type="button" data-v="Locataire">Locataire</button><button type="button" data-v="Professionnel">Pro</button></div>
-    <button class="btn deep block" style="margin-top:18px" id="iSend" type="submit"><svg><use href="#i-send"/></svg>Envoyer ma demande</button>
-    <p class="hint" id="iHint" style="text-align:center">Votre demande s'ouvre dans votre messagerie, prête à partir vers accueil@eauvea.fr.</p>
+    <div class="stack" style="margin-top:18px">
+      <button class="btn deep block" type="submit" data-via="mail"><svg><use href="#i-send"/></svg>Envoyer par e-mail</button>
+      <button class="btn block" type="submit" data-via="wa" style="background:#1f7a4d;color:#fff"><svg><use href="#i-phone"/></svg>Envoyer par WhatsApp</button>
+    </div>
+    <p class="hint" id="iHint" style="text-align:center">Votre messagerie s'ouvre avec la demande déjà écrite : il ne reste qu'à ajouter vos photos et envoyer.</p>
   </form>
 
   <div class="card" style="margin-top:14px">
@@ -968,14 +969,16 @@ setStep(0);
 /* ---------- Intervention ---------- */
 $$('#iType .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
 let profil='Propriétaire'; bindSeg($('#iProfil'),v=>profil=v);
-let photos=[];
-$('#iPhotos').onchange=e=>{ photos=[...e.target.files]; $('#iThumbs').innerHTML=''; photos.forEach(f=>{const im=document.createElement('img');im.src=URL.createObjectURL(f);$('#iThumbs').appendChild(im)}); };
-const canShareFiles=()=>{try{return !!(navigator.canShare&&photos.length&&navigator.canShare({files:photos}))}catch(e){return false}};
-$('#iForm').onsubmit=async e=>{
+let via='mail';
+$$('#iForm [data-via]').forEach(b=>b.addEventListener('click',()=>via=b.dataset.via));
+$('#iForm').onsubmit=e=>{
   e.preventDefault();
+  if(e.submitter&&e.submitter.dataset.via) via=e.submitter.dataset.via;
   const o=vals('i'), types=$$('#iType .chip.on').map(c=>c.dataset.v);
   if(!o.tel&&!o.nom){toast('Indiquez au moins votre nom ou téléphone');return}
-  const body=`Demande d'intervention depuis l'appli Eauvéa
+  const body=`Bonjour,
+
+Je souhaite une intervention d'Eauvéa.
 
 Problème : ${types.join(', ')||'non précisé'}
 Description : ${$('#iDesc').value.trim()||'-'}
@@ -983,14 +986,15 @@ Description : ${$('#iDesc').value.trim()||'-'}
 Nom : ${o.nom||'-'}
 Téléphone : ${o.tel||'-'}
 Commune : ${o.commune||'-'}
-Profil : ${profil}
-Photos : ${photos.length?photos.length+' jointe(s)':'aucune'}`;
+Je suis : ${profil.toLowerCase()}
+
+(Envoyé depuis l'appli Eauvéa)`;
   const subject='Demande d\'intervention – '+(types[0]||'Eauvéa')+(o.commune?' – '+o.commune:'');
-  if(canShareFiles()){
-    try{ await navigator.share({title:subject,text:body+'\n\nÀ envoyer à : accueil@eauvea.fr',files:photos}); return }catch(err){}
-  }
-  const a=document.createElement('a');a.href=`mailto:accueil@eauvea.fr?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body+(photos.length?'\n\n(Pensez à joindre vos photos)':''))}`;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
-  $('#iHint').textContent='Si votre messagerie ne s\'ouvre pas, appelez le 06 15 36 68 68 ou écrivez à accueil@eauvea.fr.';
+  const url = via==='wa'
+    ? 'https://wa.me/33615366868?text='+encodeURIComponent(body)
+    : 'mailto:accueil@eauvea.fr?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  try{ window.location.href=url; }catch(err){}
+  $('#iHint').textContent='Rien ne s\'ouvre ? Appelez le 06 15 36 68 68 ou écrivez à accueil@eauvea.fr.';
 };
 
 
